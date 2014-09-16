@@ -43,6 +43,9 @@ function SSLD1_script()
     distances              = zeros( steps, 1 );
     sine_pulse_harmonics   = zeros( 10,    1 );
     f_sine_pulse_harmonics = zeros( 10,    steps );
+    sine_pulse_arg         = zeros( 10,    1 );
+    f_sine_pulse_arg       = zeros( 10,    steps );
+    
     SSLD1_waitbar = waitbar( 0, 'Starting simulations!');
     close_waitbar = 1;
     figure(2); clf;
@@ -67,14 +70,18 @@ function SSLD1_script()
         distances(          simulation_count ) = evalin('base', 'distance_SSLD1'); 
         if(simulation_count == 1)
             sine_pulse_harmonics = evalin('base','sine_pulse_FFT_amp_SSLD1([ 3 5 9 13 17 21 25 29 33 37 ],1,2)'); % Read in the specturm amplitudes of the sine pulse
+            sine_pulse_arg = evalin('base','sine_pulse_FFT_arg_SSLD1([ 3 5 9 13 17 21 25 29 33 37 ],1,2)'); 
         end
         f_sine_pulse_harmonics(:, simulation_count) = evalin('base','filtered_sine_pulse_FFT_amp_SSLD1([ 3 5 9 13 17 21 25 29 33 37 ],1,2)');
+        f_sine_pulse_arg(      :, simulation_count) = evalin('base','filtered_sine_pulse_FFT_arg_SSLD1([ 3 5 9 13 17 21 25 29 33 37 ],1,2)');
+
+        
         simulation_count = simulation_count + 1;
         if(~mod(simulation_count,10))  
-            figure(2); hold on;
-            plot(linspace(0,499,1000),evalin('base','filtered_sine_pulse_FFT_amp_SSLD1(1:1000,1,2)')), grid on; xlim([0 10]);
-            figure(3); hold on;
-            plot(evalin('base','f_sine_pulse_SSLD1'));
+            %figure(2); hold on;
+            %plot(linspace(0,499,1000),evalin('base','filtered_sine_pulse_FFT_amp_SSLD1(1:1000,1,2)')), grid on; xlim([0 10]);
+            %figure(3); hold on;
+            %plot(evalin('base','f_sine_pulse_SSLD1'));
         end
     end
     
@@ -85,6 +92,8 @@ function SSLD1_script()
     assignin('base','distances_SSLD1',                 distances);
     assignin('base','sine_pulse_harmonics_SSLD1',      sine_pulse_harmonics);
     assignin('base','f_sine_pulse_harmonics_SSLD1',    f_sine_pulse_harmonics);
+    assignin('base','sine_pulse_args_SSLD1',           sine_pulse_arg);
+    assignin('base','f_sine_pulse_args_SSLD1',         f_sine_pulse_arg);
     
     %%%% Plot the results
     fprintf('Plotting results.\n');
