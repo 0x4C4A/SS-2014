@@ -41,11 +41,12 @@ function SSLD1_script()
     norms_sine_pulse       = zeros( steps, 1 );
     norms_f_sine_pulse     = zeros( steps, 1 );
     distances              = zeros( steps, 1 );
+    distances_delayed      = zeros( steps, 1 );
     sine_pulse_harmonics   = zeros( 10,    1 );
     f_sine_pulse_harmonics = zeros( 10,    steps );
     sine_pulse_arg         = zeros( 10,    1 );
     f_sine_pulse_arg       = zeros( 10,    steps );
-    
+    k                      = zeros( steps, 1 );
     SSLD1_waitbar = waitbar( 0, 'Starting simulations!');
     close_waitbar = 1;
     figure(2); clf;
@@ -61,7 +62,9 @@ function SSLD1_script()
         end
         
         % Set the SSLD1 argument variable
-        assignin('base','cutoff_SSLD1',cutoff)
+        assignin('base','cutoff_SSLD1',cutoff);
+        assignin('base','delay_SSLD1', 0);
+        assignin('base','norm_att_SSLD1', 1);
         sim('SSLD1', [0 2], options);
         cutoff_frequencies( simulation_count ) = cutoff;
         % Read the values SSLD1 generated in the workspace
@@ -74,8 +77,16 @@ function SSLD1_script()
         end
         f_sine_pulse_harmonics(:, simulation_count) = evalin('base','filtered_sine_pulse_FFT_amp_SSLD1([ 3 5 9 13 17 21 25 29 33 37 ],1,2)');
         f_sine_pulse_arg(      :, simulation_count) = evalin('base','filtered_sine_pulse_FFT_arg_SSLD1([ 3 5 9 13 17 21 25 29 33 37 ],1,2)');
-
-        
+        if( f_sine_pulse_arg(1, simulation_count) > 0 )
+            del = f_sine_pulse_arg(1, simulation_count) - sine_pulse_arg(1)
+        else
+            del = f_sine_pulse_arg(1, simulation_count) + 2*pi - sine_pulse_arg(1)
+        end
+        assignin('base', 'norm_att_SSLD1', norms_f_sine_pulse (simulation_count)/norms_sine_pulse(simulation_count));
+        assignin('base', 'delay_SSLD1', (2*pi-del)/20*pi);
+        sim('SSLD1', [0 2], options);
+        %x(step = f_sine_pulse_arg(1,simulation_count) + sine_pulse_arg(1)
+        distances_delayed( simulation_count ) = evalin('base','distance_delayed_SSLD1');
         simulation_count = simulation_count + 1;
         if(~mod(simulation_count,10))  
             %figure(2); hold on;
@@ -83,6 +94,9 @@ function SSLD1_script()
             %figure(3); hold on;
             %plot(evalin('base','f_sine_pulse_SSLD1'));
         end
+        figure(4); hold on;
+        plot( [evalin('base','f_sine_pulse_SSLD1'), evalin('base','sine_pulse_del_SSLD')]);
+        hold off;
     end
     
     %%%% Dump variables to workspace
@@ -90,18 +104,19 @@ function SSLD1_script()
     assignin('base','norms_sine_pulse_SSLD1',          norms_sine_pulse); 
     assignin('base','norms_filtered_sine_pulse_SSLD1', norms_f_sine_pulse); 
     assignin('base','distances_SSLD1',                 distances);
+    assignin('base','distances_delayed_SSLD1',         distances_delayed);
     assignin('base','sine_pulse_harmonics_SSLD1',      sine_pulse_harmonics);
     assignin('base','f_sine_pulse_harmonics_SSLD1',    f_sine_pulse_harmonics);
     assignin('base','sine_pulse_args_SSLD1',           sine_pulse_arg);
     assignin('base','f_sine_pulse_args_SSLD1',         f_sine_pulse_arg);
-    
+    assignin('base','k',k);
     %%%% Plot the results
     fprintf('Plotting results.\n');
     figure(1);
     clf;
     subplot(2,1,1);
     semilogx(cutoff_frequencies, norms_sine_pulse, cutoff_frequencies, norms_f_sine_pulse);
-    grid on; ylim([0 0.6]); % Must be adjusted depending on the signals used
+    grid on; %ylim([0 0.6]); % Must be adjusted depending on the signals used
     legend('Sine pulse norms', 'Filtered sine pulse norms', 'Location', 'SouthEast'); 
     xlabel('Frequency [Hz]'); ylabel('Signal norm'); title('Signal norms');
     
