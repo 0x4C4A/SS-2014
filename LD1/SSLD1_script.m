@@ -30,9 +30,9 @@ function SSLD1_script()
         return
     end
     
-    steps  = input('Logspaced freq. steps    (default 100)  : ');
+    steps  = input('Logspaced freq. steps    (default 20)   : ');
     if(check_if_equal_or_below_zero( steps, 'Step amount')), return; end
-    if( isempty(steps) ),  steps  = 100; end
+    if( isempty(steps) ),  steps  = 20; end
     
     %%%% Initialize stuff for the main data gathering
     simulation_count   = 1;
@@ -41,16 +41,25 @@ function SSLD1_script()
     norms_sine_pulse       = zeros( steps, 1 );
     norms_f_sine_pulse     = zeros( steps, 1 );
     distances              = zeros( steps, 1 );
+<<<<<<< HEAD
     distances_delayed      = zeros( steps, 1 );
     sine_pulse_harmonics   = zeros( 10,    1 );
     f_sine_pulse_harmonics = zeros( 10,    steps );
     sine_pulse_arg         = zeros( 10,    1 );
     f_sine_pulse_arg       = zeros( 10,    steps );
     k                      = zeros( steps, 1 );
+=======
+    harmonic_count         = 5;
+    sine_pulse_harmonics   = zeros( harmonic_count,    1 );
+    f_sine_pulse_harmonics = zeros( harmonic_count,    steps );
+    sine_pulse_arg         = zeros( harmonic_count,    1 );
+    f_sine_pulse_arg       = zeros( harmonic_count,    steps );
+    harmonics_frames       = [ 3 5 9 13 17 21 25 29 33 37 ];
+>>>>>>> origin/master
     SSLD1_waitbar = waitbar( 0, 'Starting simulations!');
     close_waitbar = 1;
-    figure(2); clf;
-    figure(3); clf;
+    %figure(2); clf;
+    %figure(3); clf;
     for cutoff = logspace(log10(low_f), log10(high_f), steps);
         output_string = sprintf('\nSimulation #%d of %d (%d%%) in progress', simulation_count, steps, round(100*simulation_count/steps) );
         if(~ishandle(SSLD1_waitbar))
@@ -62,19 +71,25 @@ function SSLD1_script()
         end
         
         % Set the SSLD1 argument variable
+<<<<<<< HEAD
         assignin('base','cutoff_SSLD1',cutoff);
         assignin('base','delay_SSLD1', 0);
         assignin('base','norm_att_SSLD1', 1);
         sim('SSLD1', [0 2], options);
+=======
+        assignin('base','cutoff_SSLD1',cutoff)
+        sim('SSLD1', [0 200], options);
+>>>>>>> origin/master
         cutoff_frequencies( simulation_count ) = cutoff;
         % Read the values SSLD1 generated in the workspace
         norms_sine_pulse(   simulation_count ) = evalin('base', 'norm_sine_pulse_SSLD1');
         norms_f_sine_pulse( simulation_count ) = evalin('base', 'norm_filtered_sine_pulse_SSLD1');
         distances(          simulation_count ) = evalin('base', 'distance_SSLD1'); 
         if(simulation_count == 1)
-            sine_pulse_harmonics = evalin('base','sine_pulse_FFT_amp_SSLD1([ 3 5 9 13 17 21 25 29 33 37 ],1,2)'); % Read in the specturm amplitudes of the sine pulse
-            sine_pulse_arg = evalin('base','sine_pulse_FFT_arg_SSLD1([ 3 5 9 13 17 21 25 29 33 37 ],1,2)'); 
+            sine_pulse_harmonics = evalin('base','sine_pulse_FFT_amp_SSLD1([ 3 5 9 13 17 ],1,2)'); % Read in the specturm amplitudes of the sine pulse
+            sine_pulse_arg = evalin('base','sine_pulse_FFT_arg_SSLD1([ 3 5 9 13 17 ],1,2)'); 
         end
+<<<<<<< HEAD
         f_sine_pulse_harmonics(:, simulation_count) = evalin('base','filtered_sine_pulse_FFT_amp_SSLD1([ 3 5 9 13 17 21 25 29 33 37 ],1,2)');
         f_sine_pulse_arg(      :, simulation_count) = evalin('base','filtered_sine_pulse_FFT_arg_SSLD1([ 3 5 9 13 17 21 25 29 33 37 ],1,2)');
         if( f_sine_pulse_arg(1, simulation_count) > 0 )
@@ -87,12 +102,18 @@ function SSLD1_script()
         sim('SSLD1', [0 2], options);
         %x(step = f_sine_pulse_arg(1,simulation_count) + sine_pulse_arg(1)
         distances_delayed( simulation_count ) = evalin('base','distance_delayed_SSLD1');
+=======
+        f_sine_pulse_harmonics(:, simulation_count) = evalin('base','filtered_sine_pulse_FFT_amp_SSLD1([ 3 5 9 13 17 ],1,2)');
+        f_sine_pulse_arg(      :, simulation_count) = evalin('base','filtered_sine_pulse_FFT_arg_SSLD1([ 3 5 9 13 17 ],1,2)');
+
+        
+>>>>>>> origin/master
         simulation_count = simulation_count + 1;
-        if(~mod(simulation_count,10))  
+        if(~mod(simulation_count,5))  
             %figure(2); hold on;
             %plot(linspace(0,499,1000),evalin('base','filtered_sine_pulse_FFT_amp_SSLD1(1:1000,1,2)')), grid on; xlim([0 10]);
-            %figure(3); hold on;
-            %plot(evalin('base','f_sine_pulse_SSLD1'));
+            figure(3); hold on;
+            plot(evalin('base','f_sine_pulse_SSLD1'));
         end
         figure(4); hold on;
         plot( [evalin('base','f_sine_pulse_SSLD1'), evalin('base','sine_pulse_del_SSLD')]);
