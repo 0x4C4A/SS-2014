@@ -61,91 +61,65 @@ void freeHadamarMatrix(int8_t **matrix, uint16_t block_edge)
 
 
 // WORKS ONLY WITH 2^N LONG SIGNALS!!!!
-uint16_t FWHT( int16_t *signal_arr, uint16_t signal_length)
+uint16_t FWHT( int16_t *signal_arr, uint16_t stages)
 {
-  uint8_t stages = 0;
-  signal_length--;
-  while( signal_length ){
-    stages++;
-    signal_length >>= 1;
-  }
-
-  int16_t tempstage, i, k, half, id, upper, downer;
+  int16_t tempstage, i, k, half; 
+  int16_t id, upper, downer;
   int16_t block_amount;
   for(tempstage = stages; tempstage>0; tempstage--){
       half = 1 << (tempstage - 1);            // Half of the block length   
       block_amount = 1<<(stages - tempstage); // The amount of blocks
-      printf("Half: %d, block_amount: %d\n", half, block_amount);
-      for(k=0; k<block_amount; k++){
+      for(k=0; k<block_amount; k++)
         for(i=0; i<half; i++){
           id = i + k*half*2;
           upper  = signal_arr[id];
           downer = signal_arr[id+half];
-          printf("upper: %d, downer: %d, id: %d\n", upper, downer, id);
-          int8_t iter;
           signal_arr[id] = upper + downer;
           signal_arr[id+half] = upper - downer;
         }
-        int8_t iter;
-        for(iter = 0; iter<(4); iter++)
-          printf("% 2d", signal_arr[iter]);
-        printf("\n");
-      }
-   }
-   return 0;
+  }
+  return 0;
 }
 
 int main(void)
 {
-  int16_t is[4] = {0, 1, 2, 5};
-  int8_t iresult[4] = {0};
-  int8_t result[4] = {0};
-  int8_t f[4][4] = {  1,  1,  1,  1,
-                      1,  1, -1, -1,
-                      1, -1, -1,  1,
-                      1, -1,  1, -1};
-  int8_t i, j;
-  int8_t out_s[4] = {0};
+  uint16_t order = 0;
+  uint16_t signal_length = 8;
+  int16_t is[8] = {0, 1, 2, 5, -5, -2, -1, 0};
+  int16_t result1[8] = {0};
   
-  iresult[0] =  is[0] + is[2];
-  iresult[1] =  is[1] + is[3];
-  iresult[2] = -is[2] + is[0];
-  iresult[3] = -is[3] + is[1];
-  
-  result[0] =  iresult[0] + iresult[1];
-  result[1] = -iresult[1] + iresult[0];
-  result[2] =  iresult[2] + iresult[3];
-  result[3] = -iresult[3] + iresult[2];
-
-  printf("k   %d, %d, %d, %d\n", result[0],result[1],result[2],result[3]);
-  
-  for(i=0; i<4; i++){
-    for(j=0; j<4; j++)
-      out_s[i] += result[j]*f[i][j];
-    out_s[i] /= 4;
+  signal_length--;
+  while( signal_length ){
+    order++;
+    signal_length >>= 1;
   }
 
-  printf("out %d, %d, %d, %d\n", out_s[0], out_s[1], out_s[2], out_s[3]);
-
-  
-
-  uint8_t order = 2; 
   int8_t **matrix = HadamarMatrix(order);
   uint16_t x, y, block_edge;
-  int16_t result1[4] = {0};
   block_edge = 1<<order;
+
+  printf("Hadamar Matrix to be used (order : %d)\n", order);
   for(y = 0; y<block_edge; y++){
     for(x = 0; x<block_edge; x++)
       printf("% 2d", matrix[x][y]);
     printf("\n");
   }
 
-  FWHT(is, 4);
-  printf("out %d, %d, %d, %d\n", is[0], is[1], is[2], is[3]);
-  for(x = 0; x<4; x++)
-    for(y = 0; y<4; y++)
+  FWHT(is, order);
+  printf("Coefficients ");
+  for(x = 0; x<(1<<order); x++){
+    printf("% 4d ", is[x]);
+  }
+  printf("\n");
+  printf("Izeja ");
+  for(x = 0; x<8; x++){
+    for(y = 0; y<8; y++){
       result1[x] += matrix[x][y]*is[y];
-  printf("out %d, %d, %d, %d\n", result1[0], result1[1], result1[2], result1[3]);
+    }
+    result1[x] >>= order;
+    printf("% 2d,", result1[x]);
+  }
+  printf("\n");
   //return;
   
 
