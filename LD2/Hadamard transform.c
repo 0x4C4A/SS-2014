@@ -25,13 +25,13 @@ uint16_t binToGray(uint16_t num)
 }
 
 // For rearranging coefficients from the Hadamar order to the Walsh order
-uint16_t HadamarToWalsh(uint16_t num, uint8_t length)
+uint16_t HadamardToWalsh(uint16_t num, uint8_t length)
 {
   return binToGray(binRev(num, length));
 }
 
 // Create a Hadamar matrix
-int8_t **HadamarMatrix(uint16_t order)
+int8_t **HadamardMatrix(uint16_t order)
 {
   int8_t **matrix = calloc(1<<order, sizeof(int8_t*));
   uint8_t i, stage, block_size, block_edge, x, y;
@@ -50,8 +50,8 @@ int8_t **HadamarMatrix(uint16_t order)
   return matrix;
 }
 
-// Free a Hadamar Matrix memory
-void freeHadamarMatrix(int8_t **matrix, uint16_t block_edge)
+// Free a Hadamard Matrix memory
+void freeHadamardMatrix(int8_t **matrix, uint16_t block_edge)
 {
   uint16_t x;
   for(x = 0; x<block_edge; x++)
@@ -88,30 +88,35 @@ int main(void)
   int16_t is[8] = {0, 1, 2, 5, -5, -2, -1, 0};
   int16_t result1[8] = {0};
   
+  // Calculate transformation order 
   signal_length--;
   while( signal_length ){
     order++;
     signal_length >>= 1;
   }
 
-  int8_t **matrix = HadamarMatrix(order);
+  // Generate and display used Hadamar matrix
+  int8_t **matrix = HadamardMatrix(order);
   uint16_t x, y, block_edge;
   block_edge = 1<<order;
 
-  printf("Hadamar Matrix to be used (order : %d)\n", order);
+  printf("Hadamard Matrix to be used (order : %d)\n", order);
   for(y = 0; y<block_edge; y++){
     for(x = 0; x<block_edge; x++)
       printf("% 2d", matrix[x][y]);
     printf("\n");
   }
 
+  // Do the fast Walsh-Hadamard transformation
   FWHT(is, order);
   printf("Coefficients ");
   for(x = 0; x<(1<<order); x++){
     printf("% 4d ", is[x]);
   }
   printf("\n");
-  printf("Izeja ");
+  
+  // Do the inverse Walsh-Hadamard transformation with the calculated coefficients
+  printf("Output ");
   for(x = 0; x<8; x++){
     for(y = 0; y<8; y++){
       result1[x] += matrix[x][y]*is[y];
@@ -120,9 +125,8 @@ int main(void)
     printf("% 2d,", result1[x]);
   }
   printf("\n");
-  //return;
   
-
-  freeHadamarMatrix(matrix, block_edge);
+  // Free up the Hadamard matrix
+  freeHadamardMatrix(matrix, block_edge);
 }
 
