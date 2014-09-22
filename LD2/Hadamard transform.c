@@ -67,26 +67,28 @@ uint16_t FWHT( int16_t *signal_arr, uint16_t stages)
   int16_t id, upper, downer;
   int16_t block_amount;
   for(tempstage = stages; tempstage>0; tempstage--){
-      half = 1 << (tempstage - 1);            // Half of the block length   
-      block_amount = 1<<(stages - tempstage); // The amount of blocks
-      for(k=0; k<block_amount; k++)
-        for(i=0; i<half; i++){
-          id = i + k*half*2;
-          upper  = signal_arr[id];
-          downer = signal_arr[id+half];
-          signal_arr[id] = upper + downer;
-          signal_arr[id+half] = upper - downer;
-        }
+    half = 1 << (tempstage - 1);            // Half of the block length   
+    block_amount = 1<<(stages - tempstage); // The amount of blocks
+    for(k=0; k<block_amount; k++)
+      for(i=0; i<half; i++){
+        id = i + k*half*2;
+        upper  = signal_arr[id];
+        downer = signal_arr[id+half];
+        signal_arr[id] = upper + downer;
+        signal_arr[id+half] = upper - downer;
+      }
   }
   return 0;
 }
 
+#define SIGNAL_LENGTH 16
+
 int main(void)
 {
   uint16_t order = 0;
-  uint16_t signal_length = 8;
-  int16_t is[8] = {0, 1, 2, 5, -5, -2, -1, 0};
-  int16_t result1[8] = {0};
+  uint16_t signal_length = SIGNAL_LENGTH; /* NB: SIGNAL LENGTH MUST BE 2^N */
+  int16_t is[SIGNAL_LENGTH] = {0, 1, 2, 5, -5, -2, -1, 0, 8, -9, 2, 5, -5, -2, -1, 0};
+  int16_t result1[SIGNAL_LENGTH] = {0};
   
   // Calculate transformation order 
   signal_length--;
@@ -117,8 +119,8 @@ int main(void)
   
   // Do the inverse Walsh-Hadamard transformation with the calculated coefficients
   printf("Output ");
-  for(x = 0; x<8; x++){
-    for(y = 0; y<8; y++){
+  for(x = 0; x<SIGNAL_LENGTH; x++){
+    for(y = 0; y<SIGNAL_LENGTH; y++){
       result1[x] += matrix[x][y]*is[y];
     }
     result1[x] >>= order;
