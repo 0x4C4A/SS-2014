@@ -6,19 +6,21 @@
 #define LED       0x01 /* PORT D */
 #define DC_PIN    0x10 /* PORT C */
 #define RESET_PIN 0x04 /* PORT C */
-
+#define CS_PIN    0x08 /* PORT C */
 
 #define SET_DATA    GPIOC->ODR |=  DC_PIN   // Set the LCD for DATA INPUT mode  (set the D/~C pin to HIGH)
 #define SET_COMMAND GPIOC->ODR &= ~DC_PIN   // Set the LCD for COMMAND mode   (set the D/~C pin to LOW)
 #define SET_RESET   GPIOC->ODR &= ~RESET_PIN 
 #define CLR_RESET   GPIOC->ODR |=  RESET_PIN
+#define SET_CS      GPIOC->ODR &= ~CS_PIN
+#define CLR_CS      GPIOC->ODR |=  CS_PIN
 
 int16_t signal[64];
 volatile uint8_t LCD_RAM[84][6];
 volatile uint8_t LCD_X = 0;
 volatile uint8_t LCD_Y = 0;
 const    uint8_t init_sequence[] = {0x21,   // Switch to extended commands
-                                    0xA7,   // Set value of LCD voltage (contrast) 
+                                    0xAC,   // Set value of LCD voltage (contrast) 
                                     0x04,   // Set temperature coefficient
                                     0x15,   // Set bias mode to 1:48 (screen is multiplexed that way)
                                     0x20,   // Switch back to regular commands
@@ -27,14 +29,16 @@ const    uint8_t init_sequence[] = {0x21,   // Switch to extended commands
 
 void initLCD(void)
 {
-  uint8_t x;
+  uint16_t x;
   uint8_t i=0;
-
+  
   SET_RESET;
-  for(x=0;x<254;x++);
+  for(x=0; x<25400; x++);
+    //for(i=0; i<20; i++);
   CLR_RESET;
+  SET_CS;
   SET_COMMAND;
-  for(x=0;x<254;x++);
+  for(x=0;x<2540;x++);
 
   while(init_sequence[i] != 0x00){
     while(SPI->SR & 0x80);  /* Wait while SPI is busy transmitting data */
@@ -141,10 +145,11 @@ int main(void){
   GPIOD->DDR |= LED;	  /* Pin directions */
   GPIOD->CR1 |= LED;    /* Set pin to high speed push-pull */
   GPIOD->CR2 |= LED;
-  GPIOC->DDR |= (1<<6)|(1<<5)|DC_PIN|RESET_PIN;  /* SPI MOSI and SPI CLK */
-  GPIOC->CR1 |= (1<<6)|(1<<5)|DC_PIN|RESET_PIN;  /* Fast push pull for quick SPI transmissions */
-  GPIOC->CR2 |= (1<<6)|(1<<5)|DC_PIN|RESET_PIN;
-
+  GPIOC->DDR |= (1<<6)|(1<<5)|DC_PIN|RESET_PIN|CS_PIN;  /* SPI MOSI and SPI CLK */
+  GPIOC->CR1 |= (1<<6)|(1<<5)|DC_PIN|RESET_PIN|CS_PIN;  /* Fast push pull for quick SPI transmissions */
+  GPIOC->CR2 |= (1<<6)|(1<<5)|DC_PIN|RESET_PIN|CS_PIN;
+  while( GPIOB->IDR & 0x80 );
+  CLR_CS;
   
   /* CLK config */
   CLK->SWCR  |= 1<<1;	  /* Enable clock source switch */
@@ -204,14 +209,14 @@ int main(void){
       if(i<32){
         data = fwhtToLCD(signal[i]);
         j = HadamardToWalsh(i,5);
-        k = 2;
-        l = 0;
+        k = 3;
+        l = 1;
       }
       else{
         data = adcToLCD(signal[i]);
         j = 8 + i;
-        k = 0;
-        l = 2;
+        k = 1;
+        l = 3;
       }
       gotoX(j);
       gotoY(k);
@@ -229,7 +234,7 @@ int main(void){
       gotoY(l+1);
       writeData( data>>24 );
     }
-    for(x=0; x<20000; x++)
-      for(i=0; i<20; i++);
+    for(x=0; x<20000; x++);
+      //for(i=0; i<20; i++);
   }
 }
