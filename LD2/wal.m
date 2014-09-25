@@ -1,13 +1,6 @@
-function [Wk] = wal( k, x )
-%Volða sakârtojums
-%   Funkcija wal(k, x)  ìenerç <k> kârtas Volða sakârtojuma vçrtîbas
-%   atbilstoði normçtâ laika vektoram <x> = [t/T] 
-n  = round(log2(k))+1;     % Rademahera funkcijas kârta
-r = [];                    % Matrica Rademahera funkciju saglabâðanai
-for i  = 1:n;
-    r (i, :) = sign(sin(2^i*pi*x));
+function [walshMatrix] = wal( N )
+%Volða sakârtojuma matrica
+%   Funkcija wal( N ), kur N = 2^i, ìenerç <N> kârtas kvadrâtisku  
+%   Volða sakârtojuma matricu, ar dimensijâm NxN.
+walshMatrix = fwht(eye(N)).*N;
 end
-
-Wk = prod(r);
-end
-
