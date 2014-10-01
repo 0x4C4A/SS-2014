@@ -70,15 +70,22 @@ class optWin(QtGui.QWidget):
         self.show()
 
     def setupUi(self, Slider):
-        Slider.resize(200, 100)
+        Slider.resize(200, 150)
         self.slider = QtGui.QSlider(QtCore.Qt.Horizontal, Slider)
         self.slider.setTickInterval(1)
-
-        self.slider.setGeometry(10, 10, 101, 30)
-
+        self.slider.setGeometry(50, 10, 101, 30)
         self.sliderlabel = QtGui.QLabel(Slider)
-        self.sliderlabel.setGeometry(50, 40, 101, 30)
-        self.sliderlabel.setText("0")
+        self.sliderlabel.setGeometry(20, 40, 200, 30)
+        self.sliderlabel.setText("Highest Walsh \"harmonic\" 0")
+
+        yoffset = 60
+        self.slider1 = QtGui.QSlider(QtCore.Qt.Horizontal, Slider)
+        self.slider1.setTickInterval(1)
+        self.slider1.setGeometry(50, 10 + yoffset, 101, 30)
+        self.sliderlabel1 = QtGui.QLabel(Slider)
+        self.sliderlabel1.setGeometry(20, 40 + yoffset, 200, 30)
+        self.sliderlabel1.setText("Lowest Walsh \"harmonic\" 0")
+        
         #QtCore.QObject.connect(self.slider, QtCore.SIGNAL('valueChanged(int)'), optWin.changeText)
         #slider.move(50,50)
         #self.button1.setGeometry(QtCore.QRect(50, 30, 99, 23))
@@ -87,17 +94,25 @@ def updateIfwht( arrSpect ):
     arrResult = []
     arrSpectWalsh = [0 for x in xrange(len(arrSpect))]
 
+    high_slider_val = int(round((win2.slider.value()/100.0)*len(arrSpect)))
+    low_slider_val = int(round((win2.slider1.value()/100.0)*len(arrSpect)))
+
+    if low_slider_val > high_slider_val:
+        high_slider_val = low_slider_val
+        win2.slider.setValue(win2.slider1.value())
+        
     for i in range(0, len(arrSpect)):
         arrSpectWalsh[HadamardToWalsh(i,5)] = arrSpect[i]
     #Reproduce the original signal from the received spectrum
     for i in range(0, len(arrSpect)):
         result = 0
-        for j in range(0, int(round((win2.slider.value()/99.0)*len(arrSpect)))):
+        for j in range(low_slider_val, high_slider_val):
             indice = HadamardToWalsh(j, 5)
             result += arrSpectWalsh[j]*ifwht_matrix[i][j]
         arrResult.append(result/len(arrSpect) )
-
-    win2.sliderlabel.setText(str(round((win2.slider.value()/100.0)*len(arrSpect))))
+    
+    win2.sliderlabel.setText("Highest Walsh \"harmonic\" "+str(high_slider_val))
+    win2.sliderlabel1.setText("Lowest Walsh \"harmonic\" "+str(low_slider_val))
     p3.plot(range(0,len(arrResult)),arrResult,clear = True)
 
 
@@ -127,7 +142,7 @@ ifwht_matrix = Walsh_matrix_gen(5)
 
 arrSpect = []
 while True:
-    print "Reading 128 bytess!"
+    print "Reading 128 bytes!"
     x = ser.read(128)
     while len(x) < 128:
         x = ser.read(128)

@@ -13,9 +13,6 @@
       <file>$PROJ_DIR$\main.c</file>
       <file>$PROJ_DIR$\stm8s.h</file>
       <file>$TOOLKIT_DIR$\inc\c\intrinsics.h</file>
-      <file>$TOOLKIT_DIR$\lib\dlstm8smn.a</file>
-      <file>$TOOLKIT_DIR$\lib\dbgstm8smd.a</file>
-      <file>$TOOLKIT_DIR$\config\lnkstm8s003k3.icf</file>
     </outputs>
     <file>
       <name>[ROOT_NODE]</name>
@@ -25,15 +22,6 @@
           <file> 3</file>
         </tool>
       </outputs>
-    </file>
-    <file>
-      <name>$PROJ_DIR$\Debug\Exe\templproj.out</name>
-      <inputs>
-        <tool>
-          <name>ILINK</name>
-          <file> 9 1 7 8</file>
-        </tool>
-      </inputs>
     </file>
     <file>
       <name>$PROJ_DIR$\main.c</name>
@@ -50,10 +38,6 @@
       <inputs>
         <tool>
           <name>BICOMP</name>
-          <file> 5 6</file>
-        </tool>
-        <tool>
-          <name>ICCSTM8</name>
           <file> 5 6</file>
         </tool>
       </inputs>
