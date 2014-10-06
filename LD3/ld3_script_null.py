@@ -27,7 +27,7 @@ class Window(QtGui.QDialog):
         sld = QtGui.QSlider(QtCore.Qt.Horizontal, self)
         sld.setFocusPolicy(QtCore.Qt.StrongFocus)
         sld.setGeometry(30, 40, 200, 30)
-        sld.setMaximum(40)
+        sld.setMaximum(30)
         sld.setMinimum(0)
         sld.setTickInterval(1)
         sld.setTickPosition(2)
