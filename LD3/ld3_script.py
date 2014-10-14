@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # Signāli un sistēmas. 3. Laboratorijas darbs
-# == Taisnstūra loga ietekme uz signāla spektur ==
+# == Taisnstūra loga ietekme uz signāla spektru ==
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
@@ -55,9 +55,12 @@ class Window(QtGui.QDialog):
         x = np.linspace(0, T, samples)
         # Logots signāls
         y = np.sin(2*np.pi*x)
-        # Spektrs
+        # Diskrēts spektrs
         S = fft(y)/samples
         fs = np.arange(0, sampRate, 1/T)
+        # Vienlaidu spektrs
+        fx0 = np.arange(-2, 10, 0.001)
+        S0  = 0.5*np.sinc(T*fx0)
         # plot 
         sign = self.figure.add_subplot(211)
         spectr = self.figure.add_subplot(212)
@@ -67,7 +70,8 @@ class Window(QtGui.QDialog):
         # Uzliek jauno
         sign.plot(x, y, '.-k')
         sign.legend(['Ierobezots signals'], 1)
-        spectr.plot(fs, abs(S), '.k')
+        spectr.stem(fs, abs(S), linefmt='k', markerfmt='.k'), spectr.hold(True)
+        spectr.plot(fx0+1, abs(S0), '-.b')
         spectr.legend(['Signala spektrs'], 1)
         spectr.axis([0., 5., 0, 0.8]), sign.axis([0, 4., -1, 1])
         spectr.grid(b = True, which='both', linewidth=2), sign.grid(b = True)
@@ -81,7 +85,7 @@ class Window(QtGui.QDialog):
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
     # Siulācijas laika patametri
-    samples  = 128
+    samples  = 256
     # GUI
     main = Window()
     main.changeValue(20)

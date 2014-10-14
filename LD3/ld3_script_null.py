@@ -27,7 +27,7 @@ class Window(QtGui.QDialog):
         sld = QtGui.QSlider(QtCore.Qt.Horizontal, self)
         sld.setFocusPolicy(QtCore.Qt.StrongFocus)
         sld.setGeometry(30, 40, 200, 30)
-        sld.setMaximum(30)
+        sld.setMaximum(40)
         sld.setMinimum(0)
         sld.setTickInterval(1)
         sld.setTickPosition(2)
@@ -54,9 +54,12 @@ class Window(QtGui.QDialog):
         y1 = np.sin(2*np.pi*x[0:width])
         y2 = np.zeros(samples-len(y1))
         y  = np.append(y1, y2)
-        # Spektrs
+        # Diskrēts pektrs
         S = fft(y)/samples
         fs = np.arange(0, sampRate, 1/T)
+        # Vienlaidu spektrs
+        fx0 = np.arange(-2, 10, 0.001)
+        S0  = 0.5*x[width-1]/T*np.sinc(x[width-1]*fx0)
         # plot 
         sign = self.figure.add_subplot(211)
         spectr = self.figure.add_subplot(212)
@@ -66,7 +69,8 @@ class Window(QtGui.QDialog):
         # Uzliek jauno
         sign.plot(x, y, '.-k')
         sign.legend(['Ierobezots signals'], 1)
-        spectr.plot(fs, abs(S), '.k')
+        spectr.stem(fs, abs(S), linefmt='k', markerfmt='.k'), spectr.hold(True)
+        spectr.plot(fx0+1, abs(S0), '-.b')
         spectr.legend(['Signala spektrs'], 1)
         spectr.axis([0., 5., 0, 0.8])
         spectr.grid(b = True), sign.grid(b = True)
@@ -80,8 +84,8 @@ class Window(QtGui.QDialog):
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
     # Siulācijas laika patametri
-    T        = 3.
-    samples  = 128
+    T        = 4.
+    samples  = 64
     sampRate = samples/T
     sampTime = 1/sampRate
     # GUI

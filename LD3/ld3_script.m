@@ -13,7 +13,7 @@ d_sin = sin(2*pi*t_norm);
 for width = max(t_norm)*sample_rate:-1:1
 % Sinusoidas vçrtîbas skatoties caur logu
 sinWin = d_sin(1,1:width);
-% Spektrs
+% Diskrçts spektrs
 S  = fft(sinWin)/length(sinWin);
 fx = 0:1/(width*sample_time):sample_rate-1/(width*sample_time);
 
