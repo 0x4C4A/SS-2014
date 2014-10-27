@@ -3,8 +3,8 @@
 #include <stdint.h>
 
 /* Use these defines to flash the correct program version to the correct MCU */
-#define TRANSMITTER 1
-#define RECEIVER    0
+#define TRANSMITTER 0   
+#define RECEIVER    1
 
 //------------------------------------------------------------------------------
 // Hardware-related definitions
@@ -15,7 +15,7 @@
 //------------------------------------------------------------------------------
 // Conditions for 2000 Baud SW UART, SMCLK = 1MHz
 //------------------------------------------------------------------------------
-#define UART_FREQ           2000    /* 2kHz is a bit overclockish. 1kHz is pretty sure to work */
+#define UART_FREQ           1000    /* 2kHz is a bit overclockish. 1kHz is pretty sure to work */
 #define UART_TBIT_DIV_2     (1000000 / (UART_FREQ * 2))
 #define UART_TBIT           (1000000 / UART_FREQ)
 
@@ -76,6 +76,38 @@ uint8_t makeCRC(uint8_t payload)
 
     return payload;
 }
+uint8_t unmakeCode(uint16_t code)
+{
+    uint8_t i;
+    uint8_t tmp;
+    for(i = 0; i < 8; i++){
+        tmp <<= 1;
+        switch(code & 0x0003){
+            case 0x01: tmp |= 0x01; break;
+            case 0x02: break;
+            default: tmp = 0x1; goto exit;  /* Makes it fail CRC */
+        }
+        code >>= 2;
+    }
+exit:
+    return tmp;
+}
+
+uint16_t makeCode(uint8_t data)
+{
+    uint16_t i;
+    uint16_t tmp;
+    data = makeCRC(data);
+    for(i = 0; i < 8; i++){
+        tmp <<= 2;
+        if(data&0x01)
+            tmp |= 0x0001;
+        else
+            tmp |= 0x0002;
+        data >>= 1;
+    }
+    return tmp;
+}
 
 uint8_t checkCRC(uint8_t byte)
 {
@@ -111,33 +143,50 @@ int main(void)
 
 	TimerA_UART_init();
     uint16_t i;
+    uint8_t data;
+    uint16_t payload;
     #if TRANSMITTER
     initADC();
 	while(1){
-        __delay_cycles(1000);
-		TimerA_UART_tx(0xAA); // preamble
+        __delay_cycles(10000);
+		TimerA_UART_tx(0x33); // preamble
         
-        __delay_cycles(1000);
-        TimerA_UART_tx( makeCRC(0x70 + (convertADCSample() >> 6)) ); // payload
+        payload = makeCode(0x70 + (convertADCSample() >> 6));
 
+        __delay_cycles(10000);
+        TimerA_UART_tx( payload & 0xFF ); // payload 1
+        
+        __delay_cycles(10000);
+        TimerA_UART_tx( payload >> 8);  // payload 2
     }
     #elif RECEIVER
     while(1){
-        __delay_cycles(10000);
-        P2OUT &= ~0x20;
-        if(rxBuffer == 0xAA && !catchNextFrame){
+        __delay_cycles(2000);
+        P2OUT &= ~0x30;
+        if(rxBuffer == 0x33 && !catchNextFrame){
             //P2OUT |= 0x20;
             catchNextFrame = 1;
         }
-        else if(rxBuffer != 0xAA && catchNextFrame){
+        else if(rxBuffer != 0x33 && catchNextFrame == 1){
             
-            if( checkCRC(rxBuffer) ){
+            payload = rxBuffer;
+                
+            //P2OUT = (P2OUT & 0xF0) | (rxBuffer & 0x0F);
+            
+            catchNextFrame = 2;
+        }
+        else if(rxBuffer != 0x33 && catchNextFrame == 2 && rxBuffer != payload){
+             P2OUT |= 0x10;
+            payload |= (uint16_t)rxBuffer << 8; 
+            data = unmakeCode(payload);
+            if(checkCRC(data)){
                 P2OUT |= 0x20;
-                P2OUT = (P2OUT & 0xF0) | (rxBuffer & 0x0F);
+                P2OUT &=~ 0x0F;
+                P2OUT |= data & 0x0F;             
             }
             catchNextFrame = 0;
+            payload = 0;
         }
-
         //if(rxBuffer > 0x70)
         //   TimerA_UART_tx(rxBuffer);
     }
