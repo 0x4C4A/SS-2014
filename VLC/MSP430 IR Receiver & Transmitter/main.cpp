@@ -3,9 +3,12 @@
 #include <stdint.h>
 
 /* Use these defines to flash the correct program version to the correct MCU */
-#define TRANSMITTER 0   
+#define TRANSMITTER 0  
 #define RECEIVER    1
 
+
+#define PREAMBLE    0x33
+#define PREAMBLE2   0xC6
 //------------------------------------------------------------------------------
 // Hardware-related definitions
 //------------------------------------------------------------------------------
@@ -60,6 +63,8 @@ void TimerA_UART_tx(unsigned char byte)
     txData |= 0x100;                        // Add mark stop bit to TXData
     txData <<= 1;                           // Add space start bit
 }
+
+
 uint8_t makeCRC(uint8_t payload)
 {
     uint8_t temp = payload & 0x7F;
@@ -76,21 +81,20 @@ uint8_t makeCRC(uint8_t payload)
 
     return payload;
 }
-uint8_t unmakeCode(uint16_t code)
+
+uint8_t checkCRC(uint8_t byte)
 {
-    uint8_t i;
-    uint8_t tmp;
-    for(i = 0; i < 8; i++){
-        tmp <<= 1;
-        switch(code & 0x0003){
-            case 0x01: tmp |= 0x01; break;
-            case 0x02: break;
-            default: tmp = 0x1; goto exit;  /* Makes it fail CRC */
-        }
-        code >>= 2;
+    uint8_t temp = byte & 0x7F;
+    uint8_t i = 0;
+    while(temp){
+        if(temp & 0x01)
+            i++;
+        temp >>= 1;
     }
-exit:
-    return tmp;
+    if( !(byte & 0x80) == !(i & 0x01))
+        return 1;
+    else
+        return 0;
 }
 
 uint16_t makeCode(uint8_t data)
@@ -108,20 +112,35 @@ uint16_t makeCode(uint8_t data)
     }
     return tmp;
 }
-
-uint8_t checkCRC(uint8_t byte)
+uint8_t checkCodeNugget(uint8_t code)
 {
-    uint8_t temp = byte & 0x7F;
-    uint8_t i = 0;
-    while(temp){
-        if(temp & 0x01)
-            i++;
-        temp >>= 1;
+    uint8_t i;
+    for(i = 0; i < 4; i++){
+        switch(code & 0x03){
+            case 0x01: break;
+            case 0x02: break;
+            default: return 0;
+        }
+        code >>= 2;
     }
-    if( !(byte & 0x80) == !(i & 0x1))
-        return 1;
-    else
-        return 0;
+    return 1;
+}
+
+uint8_t unmakeCode(uint16_t code)
+{
+    uint8_t i;
+    uint8_t tmp;
+    for(i = 0; i < 8; i++){
+        tmp <<= 1;
+        switch(code & 0x0003){
+            case 0x01: tmp |= 0x01; break;
+            case 0x02: break;
+            default: tmp = 0x1; goto exit;  /* Makes it fail CRC */
+        }
+        code >>= 2;
+    }
+exit:
+    return tmp;
 }
 
 int main(void)
@@ -134,7 +153,7 @@ int main(void)
 
 	P1OUT = 0x00;                           // Initialize all GPIO
 	P1SEL = UART_TXD + UART_RXD;            // Timer function for TXD/RXD pins
-	P1DIR = 0xFF & ~UART_RXD & ~0x10;       // Set all pins but RXD and A.4 to output
+	P1DIR = (0xFF & ~UART_RXD) & ~0x10;       // Set all pins but RXD and A.4 to output
 	P2OUT = 0x00;
 	P2SEL = 0x00;
 	P2DIR = 0xFF;
@@ -149,46 +168,59 @@ int main(void)
     initADC();
 	while(1){
         __delay_cycles(10000);
-		TimerA_UART_tx(0x33); // preamble
+		TimerA_UART_tx(PREAMBLE);
         
-        payload = makeCode(0x70 + (convertADCSample() >> 6));
+        payload = makeCode( convertADCSample() >> 3 );
 
         __delay_cycles(10000);
         TimerA_UART_tx( payload & 0xFF ); // payload 1
         
         __delay_cycles(10000);
+        TimerA_UART_tx(PREAMBLE2);
+
+        __delay_cycles(10000);
         TimerA_UART_tx( payload >> 8);  // payload 2
     }
     #elif RECEIVER
     while(1){
-        __delay_cycles(2000);
+        __delay_cycles(5000);
         P2OUT &= ~0x30;
-        if(rxBuffer == 0x33 && !catchNextFrame){
-            //P2OUT |= 0x20;
-            catchNextFrame = 1;
+        switch(rxBuffer){
+            case PREAMBLE:  catchNextFrame = 1; break;
+            case PREAMBLE2: catchNextFrame = 2; break;
+            default:
+                switch(catchNextFrame){
+                    case 1: 
+                        payload &= ~0x00FF;
+                        if(checkCodeNugget(rxBuffer))
+                            payload |= rxBuffer;
+
+                        catchNextFrame = 0;
+                        break;
+
+                    case 2:
+                        payload &= ~0xFF00;
+                        if(checkCodeNugget(rxBuffer))
+                            payload |= (uint16_t)rxBuffer << 8; 
+
+                        catchNextFrame = 0;
+                        break;
+                }
+                if(payload & 0xFF00 && payload & 0x00FF){ 
+                    P2OUT |= 0x10;
+                    data = unmakeCode(payload);
+                    if(checkCRC(data)){
+                        P2OUT |= 0x20;
+                        P2OUT &= ~0x0F;
+                        P2OUT |= data & 0x0F;
+                        P1OUT &= ~0xE0;
+                        P1OUT |= (data & 0x70) << 1;           
+                    }
+                    catchNextFrame = 0;
+                    payload = 0;
+                }
+                break;
         }
-        else if(rxBuffer != 0x33 && catchNextFrame == 1){
-            
-            payload = rxBuffer;
-                
-            //P2OUT = (P2OUT & 0xF0) | (rxBuffer & 0x0F);
-            
-            catchNextFrame = 2;
-        }
-        else if(rxBuffer != 0x33 && catchNextFrame == 2 && rxBuffer != payload){
-             P2OUT |= 0x10;
-            payload |= (uint16_t)rxBuffer << 8; 
-            data = unmakeCode(payload);
-            if(checkCRC(data)){
-                P2OUT |= 0x20;
-                P2OUT &=~ 0x0F;
-                P2OUT |= data & 0x0F;             
-            }
-            catchNextFrame = 0;
-            payload = 0;
-        }
-        //if(rxBuffer > 0x70)
-        //   TimerA_UART_tx(rxBuffer);
     }
     #endif
 	return 0;
