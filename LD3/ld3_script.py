@@ -54,7 +54,7 @@ class Window(QtGui.QDialog):
         sampRate = samples/T
         x = np.linspace(0, T, samples)
         # Logots signāls
-        y = np.sin(2*np.pi*x)
+        y = np.sin(2*np.pi*x)+np.sin(2*np.pi*x*1.5)
         # Diskrēts spektrs
         S = fft(y)/samples
         fs = np.arange(0, sampRate, 1/T)
@@ -73,7 +73,7 @@ class Window(QtGui.QDialog):
         spectr.stem(fs, abs(S), linefmt='k', markerfmt='.k'), spectr.hold(True)
         spectr.plot(fx0+1, abs(S0), '-.b')
         spectr.legend(['Signala spektrs'], 1)
-        spectr.axis([0., 5., 0, 0.8]), sign.axis([0, 4., -1, 1])
+        spectr.axis([0., 5., 0, 0.8])#, sign.axis([0, 4., -1, 1])
         spectr.grid(b = True, which='both', linewidth=2), sign.grid(b = True)
         # Papildina Line Edit widget ar loga platumu
         t = 'Taisnstura loga platums: {}xT'.format(T)
@@ -85,7 +85,7 @@ class Window(QtGui.QDialog):
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
     # Siulācijas laika patametri
-    samples  = 256
+    samples  = 128
     # GUI
     main = Window()
     main.changeValue(20)
