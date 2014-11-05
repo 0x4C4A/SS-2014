@@ -74,14 +74,14 @@ class Window(QtGui.QDialog):
         spectr.hold(False)
         # Uzliek jauno
         self.signal0 = sign.plot(x, y, '.-k')[0]
-        sign.legend(['Ierobežots signals'.decode('utf-8')], 1)
+        sign.legend(['Ierobežots signals'.decode('utf-8')], loc = 1)
         self.sign0.set_xlabel('t/T'), self.sign0.set_ylabel('Ampl.')
         self.sign1.set_xlabel('t/T'), self.sign1.set_ylabel('Ampl.')
         self.spectr0.set_xlabel('f/fs'), self.spectr0.set_ylabel('S(f)/max[S(f)]')
         self.spectr1.set_xlabel('f/fs'), self.spectr1.set_ylabel('S(f)/max[S(f)]')
         spectr.hold(True)
         self.spectrumstemmarker0, self.spectrumstemlines0, self.dontcare = spectr.stem(fs, abs(S)/max(abs(S)), linefmt='k', markerfmt='.k')
-        spectr.legend(['Signala spektrs'.decode('utf-8')], 1)
+        spectr.legend(['Signala spektrs'.decode('utf-8')], loc = 1)
         #self.spectrumplot0 = spectr.plot(fx0, abs(S0), '-.b')[0]
         #spectr.plot([0, sampRate0], [0.5, 0.5],[0, sampRate0], [0.25, 0.25],[0, sampRate0], [0.125, 0.125])
         spectr.axis([0., 6., 0, 1.1]), sign.axis([0, max(x), -2, 2])
@@ -104,9 +104,9 @@ class Window(QtGui.QDialog):
         fx0 = np.arange(-2, 10, 0.001)
         S0  = 0.5*x[width-1]/T*np.sinc(x[width-1]*fx0)*0
         self.signal1 = sign.plot(x, y, '.-k')[0]
-        sign.legend(['Ierobežots signals'.decode('utf-8')], 1)
+        sign.legend(['Ierobežots signals'.decode('utf-8')], loc = 1)
         self.spectrumstemmarker1, self.spectrumstemlines1, self.dontcare = spectr.stem(fs, abs(S)/max(abs(S)), linefmt='k', markerfmt='.k')
-        spectr.legend(['Signala spektrs'.decode('utf-8')], 1)
+        spectr.legend(['Signala spektrs'.decode('utf-8')], loc = 1)
         spectr.hold(True)
         #self.spectrumplot1 = spectr.plot(fx0+1, abs(S0), '-.b')[0]
         #spectr.plot([0, sampRate0], [0.5, 0.5],[0, sampRate0], [0.25, 0.25],[0, sampRate0], [0.125, 0.125])
