@@ -15,7 +15,7 @@ w2 = w0+dw/2;
 FMin = [sin(w1*t(1:round(samples/2))), sin(w2*t(round(samples/2+1):end))];
 %% Aprçíini
 %Sagataves datiem par aiztures laiku
-steps = 100;
+steps = 200;
 delay = zeros(1, steps);
 B  = zeros(1, steps);
 ns = 1;
@@ -45,15 +45,15 @@ for R = linspace(0.01, 300, steps);
     B(ns)     = dw*Q/w0;
     ns = ns+1;
     % Dinamisks izejas signâla frekvences grafiks
-%     plot(t, freqOut(1:samples), '-b',...
-%         [min(t), max(t)], [tresh tresh], '--r',...
-%         t(samples/2), tresh, '.r', ...
-%         t(i), freqOut(i), '.r', 'MarkerSize', 20), grid on, ylim([-1 1])
-%     pause(0.05)
+     plot(t, freqOut(1:samples), '-b',...
+        [min(t), max(t)], [tresh tresh], '--r',...
+        t(samples/2), tresh, '.r', ...
+        t(i), freqOut(i), '.r', 'MarkerSize', 20), grid on, ylim([-1 1])
+    pause(0.01)
 end
 % Aiztures atkarîbâ no filtra un signâla deviâcijas
  figure(2)
- plot(B, delay*1e3), grid on
+ semilogx(1./B, delay*1e3), grid on
  xlabel('{\Delta}w/w_{dev}'), ylabel('t_{aiztures} [ms]')
  title('Aiztures atkarîbâ no filtra caurlaides joslasa un signâla deviâcijas')
  
